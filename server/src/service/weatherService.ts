@@ -79,5 +79,59 @@ class WeatherService {
   // TODO: Complete getWeatherForCity method
   // async getWeatherForCity(city: string) {}
 }
+async getWeatherForCity(city: string) {
+  const requestURL = `${this.baseURL}/geo/1.0/direct?q=${city}&limit=5&appid=${this.apiKey}`;
+
+  const newInfo = await fetch(requestURL);
+
+  if (!newInfo.ok) {
+    console.log(`Error:${newInfo.statusText}`);
+  }
+
+  const locationObj: Array<any> = await newInfo.json();
+
+  const { lat, lon }: Coordinates = locationObj[0];
+
+  const cityUrl = `${this.baseURL}/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=imperial`;
+
+  const cityInfo = await fetch(cityUrl);
+
+  if (!cityInfo.ok) {
+    console.log(`Error:${cityInfo.statusText}`);
+  }
+
+  const cityObj = await cityInfo.json();
+
+  // console.log(cityObj);
+  const forecast = [];
+
+  for (let i = 0; i < cityObj.list.length; i += 8) {
+    const tempF = cityObj.list[i].main.temp;
+    const windSpeed = cityObj.list[i].wind.speed;
+    const humidity = cityObj.list[i].main.humidity;
+    const icon = cityObj.list[i].weather[0].icon;
+    const iconDescription = cityObj.list[i].weather[0].iconDescription;
+    const date = dayjs.unix(cityObj.list[i].dt).format("MM-DD-YYYY");
+
+    const weatherObj = new Weather(
+      city,
+      date,
+      tempF,
+      windSpeed,
+      humidity,
+      icon,
+      iconDescription
+    );
+
+    forecast.push(weatherObj);
+
+    if (i + 8 === 40) {
+      i--;
+    }
+  }
+
+  return forecast;
+}
+}
 
 export default new WeatherService();
